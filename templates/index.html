@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>AEROTRACK</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Share+Tech+Mono&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+    <link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+
+<header class="topbar">
+    <div class="topbar-left">
+        <div class="logo-mark">✈</div>
+        <div>
+            <div class="logo-text">AEROTRACK</div>
+            <div class="logo-sub">Search &amp; Rescue Intelligence System</div>
+        </div>
+    </div>
+    <div class="topbar-center">
+        <div class="stat-pill"><span class="stat-label">LIVE</span><span id="totalCount" class="stat-value">—</span></div>
+        <div class="stat-pill"><span class="stat-label">IN AIR</span><span id="inAirCount" class="stat-value">—</span></div>
+        <div class="stat-pill danger-pill" id="alertPill" style="display:none">
+            <span class="stat-label">⚠ ALERTS</span><span id="alertCount" class="stat-value">0</span>
+        </div>
+        <div class="stat-pill"><span class="stat-label">REFRESH</span><span id="countdown" class="stat-value">20s</span></div>
+    </div>
+    <div class="topbar-right">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText" class="status-label">Connecting…</span>
+        <span id="lastUpdate" class="last-update"></span>
+    </div>
+</header>
+
+<div class="main-container">
+
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-search">
+            <input type="text" id="searchInput" placeholder="Search callsign, country, ICAO…" oninput="filterAircraft()"/>
+            <div class="search-icon">⌕</div>
+        </div>
+        <div class="filter-row">
+            <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+            <button class="filter-btn" onclick="setFilter('danger',this)">🔴 Alert</button>
+            <button class="filter-btn" onclick="setFilter('air',this)">✈ Air</button>
+            <button class="filter-btn" onclick="setFilter('high',this)">▲ High</button>
+        </div>
+        <div class="sidebar-label">LIVE AIRCRAFT</div>
+        <ul id="aircraftList"></ul>
+    </aside>
+
+    <!-- MAP -->
+    <div class="map-wrapper">
+        <div id="map"></div>
+
+        <!-- INFO PANEL -->
+        <div class="info-panel" id="infoPanel">
+            <div class="panel-placeholder" id="panelPlaceholder">
+                <div class="placeholder-icon">✈</div>
+                <div class="placeholder-text">Select an aircraft<br/>to view details</div>
+            </div>
+            <div id="panelContent" style="display:none">
+                <div class="info-header">
+                    <div>
+                        <div class="info-callsign" id="callsign">—</div>
+                        <div class="info-meta">
+                            <span id="country">—</span>
+                            <span class="meta-sep">·</span>
+                            <span id="flightPhase">—</span>
+                            <span class="meta-sep">·</span>
+                            <span id="squawk">SQWK —</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="info-badge" id="riskBadge">—</div>
+                        <!-- Risk score gauge -->
+                        <div class="risk-gauge-wrap">
+                            <canvas id="riskGauge" width="60" height="34"></canvas>
+                            <div class="risk-score-val" id="riskScoreVal">—</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Big 3 -->
+                <div class="info-grid-3">
+                    <div class="info-cell">
+                        <div class="cell-label">SPEED</div>
+                        <div class="cell-value big" id="speed">—</div>
+                        <div class="cell-sub"><span id="speedKmh">—</span> km/h · <span id="speedKnots">—</span> kts</div>
+                    </div>
+                    <div class="info-cell">
+                        <div class="cell-label">ALTITUDE</div>
+                        <div class="cell-value big" id="altitude">—</div>
+                        <div class="cell-sub"><span id="altFt">—</span> ft · geo <span id="geoAlt">—</span>m</div>
+                    </div>
+                    <div class="info-cell">
+                        <div class="cell-label">MACH</div>
+                        <div class="cell-value big" id="mach">—</div>
+                        <div class="cell-sub">approx sea level</div>
+                    </div>
+                </div>
+
+                <!-- Secondary grid -->
+                <div class="info-grid-2">
+                    <div class="info-cell">
+                        <div class="cell-label">HEADING</div>
+                        <div class="cell-value"><span id="heading">—</span>° <span id="headingCompass" class="compass-badge">—</span></div>
+                    </div>
+                    <div class="info-cell">
+                        <div class="cell-label">VERT RATE</div>
+                        <div class="cell-value" id="vertRate">—</div>
+                    </div>
+                    <div class="info-cell">
+                        <div class="cell-label">LATITUDE</div>
+                        <div class="cell-value mono" id="latitude">—</div>
+                    </div>
+                    <div class="info-cell">
+                        <div class="cell-label">LONGITUDE</div>
+                        <div class="cell-value mono" id="longitude">—</div>
+                    </div>
+                    <div class="info-cell">
+                        <div class="cell-label">ICAO24</div>
+                        <div class="cell-value mono" id="icao">—</div>
+                    </div>
+                    <div class="info-cell">
+                        <div class="cell-label">STATUS</div>
+                        <div class="cell-value" id="groundStatus">—</div>
+                    </div>
+                </div>
+
+                <!-- 3 SAR Zones -->
+                <div class="zone-section">
+                    <div class="zone-label">◎ SAR SEARCH ZONES · DEAD RECKONING</div>
+                    <div class="zone-cards" id="zoneCards">
+                        <div class="zone-card z1">
+                            <div class="zc-header"><span class="zc-dot" style="background:#ff3b3b"></span>Zone 1</div>
+                            <div class="zc-prob" id="z1prob">—</div>
+                            <div class="zc-row"><span>Radius</span><span id="z1radius">—</span></div>
+                            <div class="zc-row"><span>Distance</span><span id="z1dist">—</span></div>
+                            <div class="zc-row"><span>T+</span><span id="z1time">5 min</span></div>
+                        </div>
+                        <div class="zone-card z2">
+                            <div class="zc-header"><span class="zc-dot" style="background:#ffaa00"></span>Zone 2</div>
+                            <div class="zc-prob" id="z2prob">—</div>
+                            <div class="zc-row"><span>Radius</span><span id="z2radius">—</span></div>
+                            <div class="zc-row"><span>Distance</span><span id="z2dist">—</span></div>
+                            <div class="zc-row"><span>T+</span><span id="z2time">10 min</span></div>
+                        </div>
+                        <div class="zone-card z3">
+                            <div class="zc-header"><span class="zc-dot" style="background:#00b4ff"></span>Zone 3</div>
+                            <div class="zc-prob" id="z3prob">—</div>
+                            <div class="zc-row"><span>Radius</span><span id="z3radius">—</span></div>
+                            <div class="zc-row"><span>Distance</span><span id="z3dist">—</span></div>
+                            <div class="zc-row"><span>T+</span><span id="z3time">20 min</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weather at crash zone -->
+                <div class="weather-section">
+                    <div class="zone-label">🌤 WEATHER AT CRASH ZONE</div>
+                    <div id="weatherBox" class="weather-box">
+                        <div class="hosp-placeholder">Load zones first, then click Fetch Weather</div>
+                    </div>
+                    <button class="btn-hosp" id="weatherBtn" onclick="loadWeather()" style="margin-top:6px">Fetch Weather</button>
+                </div>
+
+                <!-- Hospitals -->
+                <div class="hospital-section">
+                    <div class="zone-label">🏥 NEARBY HOSPITALS · CRASH ZONE</div>
+                    <div id="hospitalList" class="hospital-list">
+                        <div class="hosp-placeholder">Click "Load Hospitals" after selecting aircraft</div>
+                    </div>
+                    <button class="btn-hosp" id="hospBtn" onclick="loadHospitals()">Load Hospitals</button>
+                </div>
+
+                <!-- Alert box -->
+                <div id="alertBox" class="alert-box" style="display:none"></div>
+
+                <!-- Actions -->
+                <div class="panel-actions">
+                    <button class="btn-action btn-follow" id="followBtn" onclick="toggleFollow()">▶ FOLLOW</button>
+                    <button class="btn-action btn-trail"  onclick="toggleTrail()">◎ TRAIL</button>
+                    <button class="btn-action btn-pdf"    onclick="exportPDF()">⬇ PDF</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <aside class="right-panel">
+        <div class="rp-section">
+            <div class="rp-label">GLOBAL STATS</div>
+            <div class="gs-grid">
+                <div class="gs-cell"><div class="gs-val" id="gsAvgSpeed">—</div><div class="gs-key">Avg Speed</div><div class="gs-sub" id="gsAvgSpeedKmh">—</div></div>
+                <div class="gs-cell"><div class="gs-val" id="gsMaxSpeed">—</div><div class="gs-key">Max Speed</div><div class="gs-sub" id="gsMaxSpeedKmh">—</div></div>
+                <div class="gs-cell"><div class="gs-val" id="gsAvgAlt">—</div><div class="gs-key">Avg Alt</div><div class="gs-sub" id="gsMaxAlt">—</div></div>
+                <div class="gs-cell"><div class="gs-val" id="gsDanger">—</div><div class="gs-key">Alerts</div><div class="gs-sub">active</div></div>
+            </div>
+        </div>
+
+        <!-- Top Risk Aircraft -->
+        <div class="rp-section">
+            <div class="rp-label">⚠ TOP RISK AIRCRAFT</div>
+            <div id="topRiskList" class="mini-table"></div>
+        </div>
+
+        <div class="rp-section">
+            <div class="rp-label">FLIGHT PHASES</div>
+            <div id="phaseList" class="phase-list"></div>
+        </div>
+        <div class="rp-section">
+            <div class="rp-label">TOP COUNTRIES</div>
+            <div id="countryList" class="country-list"></div>
+        </div>
+        <div class="rp-section">
+            <div class="rp-label">SELECTED · ALTITUDE (m)</div>
+            <div class="chart-wrap"><canvas id="altChart"></canvas></div>
+        </div>
+        <div class="rp-section">
+            <div class="rp-label">SELECTED · SPEED (m/s)</div>
+            <div class="chart-wrap"><canvas id="spdChart"></canvas></div>
+        </div>
+
+        <div class="rp-section">
+            <div class="rp-label">TOP 5 FASTEST</div>
+            <div id="fastestList" class="mini-table"></div>
+        </div>
+        <div class="rp-section">
+            <div class="rp-label">TOP 5 HIGHEST</div>
+            <div id="highestList" class="mini-table"></div>
+        </div>
+    </aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-rotatedmarker/leaflet.rotatedMarker.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script src="/static/script.js"></script>
+</body>
+</html>
