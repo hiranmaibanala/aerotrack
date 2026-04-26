@@ -125,7 +125,7 @@ def predict_three_zones(speed, heading_deg, t=300):
 
 
 # ── Fetch with retry ──────────────────────────────────────────────
-def fetch_with_retry(url, params=None, retries=3, timeout=15, auth=None):
+def fetch_with_retry(url, params=None, retries=3, timeout=30, auth=None):
     for attempt in range(retries):
         try:
             r = requests.get(url, params=params, timeout=timeout, auth=auth)
