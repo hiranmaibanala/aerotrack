@@ -1,5 +1,5 @@
 from flask import Flask, jsonify, render_template, request
-import requests, time, logging, math
+import os, requests, time, logging, math
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -13,6 +13,8 @@ HISTORY     = {}
 MAX_HISTORY = 60
 
 OPENSKY_URL = "https://opensky-network.org/api/states/all"
+OPENSKY_USERNAME = os.environ.get("hiranmaibanala")
+OPENSKY_PASSWORD = os.environ.get("RishiJunnia@3")
 WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
 
 
@@ -123,10 +125,10 @@ def predict_three_zones(speed, heading_deg, t=300):
 
 
 # ── Fetch with retry ──────────────────────────────────────────────
-def fetch_with_retry(url, params=None, retries=3, timeout=15):
+def fetch_with_retry(url, params=None, retries=3, timeout=15, auth=None):
     for attempt in range(retries):
         try:
-            r = requests.get(url, params=params, timeout=timeout)
+            r = requests.get(url, params=params, timeout=timeout, auth=auth)
             if r.status_code == 200:
                 return r.json()
         except Exception as e:
@@ -142,7 +144,8 @@ def fetch_all_aircraft():
     if CACHE["data"] and (now - CACHE["ts"]) < CACHE_TTL:
         return CACHE["data"]
 
-    raw = fetch_with_retry(OPENSKY_URL)
+    auth = (OPENSKY_USERNAME, OPENSKY_PASSWORD) if (OPENSKY_USERNAME and OPENSKY_PASSWORD) else None
+    raw = fetch_with_retry(OPENSKY_URL, auth=auth)
     if not raw or not raw.get("states"):
         logging.warning("OpenSky returned no data — serving stale cache")
         return LAST_DATA
