@@ -13,8 +13,8 @@ HISTORY     = {}
 MAX_HISTORY = 60
 
 OPENSKY_URL = "https://opensky-network.org/api/states/all"
-OPENSKY_USERNAME = os.environ.get("hiranmaibanala")
-OPENSKY_PASSWORD = os.environ.get("RishiJunnia@3")
+OPENSKY_USERNAME = os.environ.get("OPENSKY_USERNAME", "hiranmaibanala")
+OPENSKY_PASSWORD = os.environ.get("OPENSKY_PASSWORD", "RishiJunnia@3")
 WEATHER_URL = "https://api.open-meteo.com/v1/forecast"
 
 
