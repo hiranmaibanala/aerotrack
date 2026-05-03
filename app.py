@@ -3,7 +3,6 @@ import os, requests, time, logging, math
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
-
 # ── Cache & State ─────────────────────────────────────────────────
 LAST_DATA   = []
 CACHE       = {"data": None, "ts": 0}
