@@ -5,12 +5,6 @@
 
 ---
 
-## 🌐 Live Demo
-🔗 **[aerotrack.onrender.com](https://aerotrack.onrender.com)**  
-*(Free tier — may take 30 seconds to wake up on first visit)*
-
----
-
 ## 📌 What is AEROTRACK?
 
 AEROTRACK is a real-time aviation monitoring and Search & Rescue (SAR) decision support system. It ingests live ADS-B telemetry from every aircraft flying globally, detects emergency flight conditions automatically, and generates three probabilistic SAR search zones within **50 milliseconds** of aircraft selection — reducing the traditional 15–30 minute manual zone calculation to under one second.
