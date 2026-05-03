@@ -4,7 +4,6 @@
 > **Tracks 6,000+ live flights globally · Predicts SAR zones in under 50ms · Emergency detection · Weather · Hospitals · PDF Export**
 
 ---
-
 ## 📌 What is AEROTRACK?
 
 AEROTRACK is a real-time aviation monitoring and Search & Rescue (SAR) decision support system. It ingests live ADS-B telemetry from every aircraft flying globally, detects emergency flight conditions automatically, and generates three probabilistic SAR search zones within **50 milliseconds** of aircraft selection — reducing the traditional 15–30 minute manual zone calculation to under one second.
